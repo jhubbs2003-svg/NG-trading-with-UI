@@ -8,7 +8,7 @@
 \f0\fs24 \cf0 streamlit>=1.28.0\
 pandas>=1.5.0\
 numpy>=1.24.0\
-plotly>=\
+plotly\
 yfinance>=0.2.0\
 scikit-learn>=1.3.0\
 ta>=0.10.2\
