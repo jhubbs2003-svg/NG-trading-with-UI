@@ -179,7 +179,7 @@ else:
                     st.error(f"Simple Analysis Failed: {e}")
                     st.session_state.results_to_display = False
 
-        st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
 
 
 # --- MAIN CONTENT AREA ---
