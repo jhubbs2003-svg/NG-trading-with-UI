@@ -1215,7 +1215,7 @@ st.markdown("""
 
 # Initialize session state
 if 'model' not in st.session_state:
-    st.session_state.model = SimplifiedNGModel()
+    st.session_state.model = EnhancedNaturalGasModel()
 if 'data_loaded' not in st.session_state:
     st.session_state.data_loaded = False
 
