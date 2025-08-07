@@ -1764,12 +1764,12 @@ if 'backtest_results' in st.session_state and st.session_state.backtest_results 
                 row=1, col=1
             )
             fig_tech.add_trace(
-                go.Scatter(x=backtest_results.index, y=backtest_results['bb_upper'], 
+                go.Scatter(x=backtest_results.index, y=backtest_results['bb_high'], 
                           mode='lines', name='BB Upper', line=dict(color='red', dash='dash')),
                 row=1, col=1
             )
             fig_tech.add_trace(
-                go.Scatter(x=backtest_results.index, y=backtest_results['bb_lower'], 
+                go.Scatter(x=backtest_results.index, y=backtest_results['bb_low'], 
                           mode='lines', name='BB Lower', line=dict(color='green', dash='dash')),
                 row=1, col=1
             )
