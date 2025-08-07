@@ -99,8 +99,7 @@ st.markdown("""
 .danger-metric { border-left-color: #dc3545; }
 .sidebar-section { background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; }
 </style>
-""",unsafe_allow_html=True 
-)
+""", unsafe_allow_html=True)
 
 # Initialize session state
 if 'model' not in st.session_state:
@@ -180,7 +179,7 @@ else:
                     st.error(f"Simple Analysis Failed: {e}")
                     st.session_state.results_to_display = False
 
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # --- MAIN CONTENT AREA ---
