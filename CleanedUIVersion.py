@@ -134,20 +134,31 @@ with st.sidebar:
     st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
     if st.button("🚀 Run Analysis", type="primary", use_container_width=True):
         st.session_state.model.api_key = api_key if api_key else None
-        
-        if strategy_type == "Machine Learning Prediction":
-            with st.spinner("Executing full ML analysis... This may take a moment."):
-                try:
-                    backtest_results, performance_metrics, signals = st.session_state.model.run_full_analysis(
-                        api_key=api_key, target=prediction_target
-                    )
-                    st.session_state.backtest_results = backtest_results
-                    st.session_state.performance_metrics = performance_metrics
-                    st.session_state.signals = signals
-                    st.session_state.results_to_display = True
-                except Exception as e:
-                    st.error(f"ML Analysis Failed: {e}")
-                    st.session_state.results_to_display = False
+        # ng_trading_ui.py (in the sidebar section)
+
+    st.sidebar.header("🧠 Model Configuration")
+
+    strategy_type = st.sidebar.selectbox(
+        "Strategy Type",
+        ["Simple Technicals", "Machine Learning Prediction"]
+    )
+
+    if strategy_type == "Machine Learning Prediction":
+        model_type = st.sidebar.selectbox(
+            "Model Type",
+            ['Random Forest', 'Gradient Boosting'],
+            help="Choose the algorithm for the predictive model."
+        )
+        prediction_target = st.sidebar.selectbox(
+            "Prediction Target",
+            ['direction_1d', 'direction_5d', 'direction_20d'],
+            help="What should the model predict? (Price direction in X days)"
+        )
+        ml_confidence = st.sidebar.slider(
+            "ML Signal Confidence", 0.55, 0.80, 0.60, 0.05,
+            help="The probability threshold required to generate a buy/sell signal."
+        )
+
         else: # Simple Technicals
             with st.spinner("Running simple technical analysis..."):
                 try:
