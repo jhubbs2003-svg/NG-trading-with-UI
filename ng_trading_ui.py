@@ -61,7 +61,21 @@ class EnhancedNaturalGasModel:
         self.model = None
         self.scaler = StandardScaler()
         self.feature_selector = None
-        
+    def fetch_data(self, ticker='NG=F', start_date='2015-01-01'):
+    """
+    Unified method to fetch data - wrapper around specific fetch methods
+    """
+    try:
+        # Try Yahoo Finance first
+        data = self.fetch_yahoo_data(ticker, start_date)
+        if data is not None and not data.empty:
+            data['returns'] = data['price'].pct_change()
+            self.data = data
+            return True
+        return False
+    except Exception as e:
+        print(f"Error in fetch_data: {e}")
+        return False
     def fetch_eia_data(self, series_id, start_date='2015-01-01'):
         """Fetch data from EIA API"""
         if not self.api_key:
