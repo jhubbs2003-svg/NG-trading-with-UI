@@ -3,7 +3,7 @@
 Natural Gas Trading Model - Interactive Web Interface
 Run with: streamlit run ng_trading_ui.py
 """
-pip install plotly
+
 import streamlit as st
 import pandas as pd
 import numpy as np
