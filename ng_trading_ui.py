@@ -1278,14 +1278,39 @@ st.sidebar.markdown('</div>', unsafe_allow_html=True)
 if load_data_btn:
     with st.spinner("Loading natural gas data..."):
         if data_source == "Yahoo Finance (NG=F)":
-            success = st.session_state.model.fetch_data('NG=F', start_date.strftime('%Y-%m-%d'))
-            if success:
-                st.session_state.data_loaded = True
-                st.success("✅ Data loaded successfully!")
+            try:
+                data = st.session_state.model.fetch_yahoo_data('NG=F', start_date.strftime('%Y-%m-%d'))
+                if data is not None and not data.empty:
+                    st.session_state.model.data = data
+                    st.session_state.model.data['returns'] = st.session_state.model.data['price'].pct_change()
+                    st.session_state.data_loaded = True
+                    st.success("✅ Data loaded successfully!")
+                else:
+                    st.error("❌ Failed to load data")
+                    st.session_state.data_loaded = False
+            except Exception as e:
+                st.error(f"❌ Error loading data: {str(e)}")
+                st.session_state.data_loaded = False
+        elif data_source == "EIA API":
+            if 'eia_api_key' in locals() and eia_api_key:
+                st.session_state.model.api_key = eia_api_key
+                try:
+                    data = st.session_state.model.fetch_eia_data("NG.RNGWHHD.D", start_date.strftime('%Y-%m-%d'))
+                    if data is not None and not data.empty:
+                        st.session_state.model.data = data
+                        st.session_state.model.data['returns'] = st.session_state.model.data['price'].pct_change()
+                        st.session_state.data_loaded = True
+                        st.success("✅ Data loaded successfully!")
+                    else:
+                        st.error("❌ Failed to load EIA data")
+                        st.session_state.data_loaded = False
+                except Exception as e:
+                    st.error(f"❌ Error loading EIA data: {str(e)}")
+                    st.session_state.data_loaded = False
             else:
-                st.error("❌ Failed to load data")
+                st.error("❌ Please enter a valid EIA API key")
         else:
-            st.info("🔄 Custom upload and EIA API integration coming soon!")
+            st.info("🔄 Custom upload coming soon!")
 
 # Display data overview
 if st.session_state.data_loaded and st.session_state.model.data is not None:
