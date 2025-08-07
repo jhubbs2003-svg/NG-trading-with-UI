@@ -1413,7 +1413,7 @@ if st.session_state.data_loaded and st.session_state.model.data is not None:
     col1, col2, col3, col4 = st.columns(4)
     data = st.session_state.model.data
     
-   with col1:
+    with col1:
         if not data.empty and 'price' in data and 'returns' in data:
             st.metric(
                 "Current Price",
