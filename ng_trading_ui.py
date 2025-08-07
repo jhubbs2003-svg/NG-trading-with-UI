@@ -1651,7 +1651,7 @@ if 'backtest_results' in st.session_state and st.session_state.backtest_results 
             with col3:
                 color = "success" if metrics['Sharpe Ratio'] > 1 else "warning" if metrics['Sharpe Ratio'] > 0 else "danger"
                 st.markdown(f'<div class="metric-card {color}-metric">', unsafe_allow_html=True)
-                st.metric("Sharpe Ratio", f"{metrics['Sharpe Ratio']:.2f}")
+                st.metric("Sharpe Ratio", f"{metrics['Sharpe Ratio']:.2%}")
                 st.markdown('</div>', unsafe_allow_html=True)
             
             with col4:
