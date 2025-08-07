@@ -219,12 +219,35 @@ if st.session_state.results_to_display:
     st.plotly_chart(fig, use_container_width=True)
 
     # Display feature importance if ML model was run
-    if strategy_type == "Machine Learning Prediction" and hasattr(st.session_state.model, 'selected_features'):
-        st.header("🧠 Model Insights: Top Predictive Features")
-        importances = st.session_state.model.model.feature_importances_
-        feature_imp = pd.DataFrame(sorted(zip(importances, st.session_state.model.selected_features)), columns=['Value','Feature'])
-        fig_imp = px.bar(feature_imp.tail(15), x="Value", y="Feature", orientation='h', title="Top 15 Most Important Features")
-        st.plotly_chart(fig_imp, use_container_width=True)
+if strategy_type == "Machine Learning Prediction":
+    st.header("🔮 Future Outlook")
+
+    # Get the last row of data to make a prediction
+    last_data_point = st.session_state.model.data[st.session_state.model.selected_features].tail(1)
+    
+    # Scale it using the trained scaler
+    last_data_scaled = st.session_state.model.scaler.transform(last_data_point)
+    
+    # Get prediction probabilities
+    prediction_proba = st.session_state.model.model.predict_proba(last_data_scaled)
+    prob_down = prediction_proba[0][0]
+    prob_up = prediction_proba[0][1]
+
+    # Display the result
+    if prob_up > prob_down:
+        st.success(f"**Prediction: Price INCREASE** ({prob_up:.1%} confidence)", icon="📈")
+    else:
+        st.error(f"**Prediction: Price DECREASE** ({prob_down:.1%} confidence)", icon="📉")
+
+    # You can visualize this with a simple gauge or bar chart
+    fig = go.Figure(go.Bar(
+        x=[prob_up, prob_down],
+        y=['Price Up', 'Price Down'],
+        orientation='h',
+        marker_color=['#28a745', '#dc3545']
+    ))
+    fig.update_layout(title_text='Prediction Probability')
+    st.plotly_chart(fig, use_container_width=True)
 
 else:
     st.header("🚀 Getting Started")
