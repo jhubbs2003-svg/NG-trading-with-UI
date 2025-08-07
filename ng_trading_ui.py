@@ -1413,12 +1413,15 @@ if st.session_state.data_loaded and st.session_state.model.data is not None:
     col1, col2, col3, col4 = st.columns(4)
     data = st.session_state.model.data
     
-    with col1:
-        st.metric(
-            "Current Price",
-            f"${data['price'].iloc[-1]:.2f}",
-            f"{data['returns'].iloc[-1]:.2%}"
-        )
+   with col1:
+        if not data.empty and 'price' in data and 'returns' in data:
+            st.metric(
+                "Current Price",
+                f"${data['price'].iloc[-1]:.2f}",
+                f"{data['returns'].iloc[-1]:.2%}"
+            )
+        else:
+            st.metric("Current Price", "N/A", "N/A")
     
     with col2:
         st.metric(
