@@ -159,7 +159,7 @@ with st.sidebar:
             help="The probability threshold required to generate a buy/sell signal."
         )
 
-        else:
+    else:
             with st.spinner("Running simple technical analysis..."):
                 try:
                     # For simple mode, we still need to prepare basic data
