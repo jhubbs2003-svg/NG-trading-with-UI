@@ -1382,16 +1382,168 @@ if st.session_state.data_loaded and st.session_state.model.data is not None:
     st.plotly_chart(fig, use_container_width=True)
 
 # Run analysis
+# Replace the analysis section around line 1385-1400 with this:
+
 if run_analysis_btn and st.session_state.data_loaded:
     with st.spinner("Running trading strategy analysis..."):
-        # Add technical indicators
-        st.session_state.model.add_technical_indicators()
+        try:
+            # Check if data exists
+            if st.session_state.model.data is None:
+                st.error("❌ No data loaded. Please load data first.")
+            else:
+                # Add technical indicators to the existing data
+                st.session_state.model.data = st.session_state.model.add_technical_indicators(st.session_state.model.data)
+                
+                # Add other required features for the model to work
+                st.session_state.model.data = st.session_state.model.add_market_structure_features(st.session_state.model.data)
+                st.session_state.model.data = st.session_state.model.add_seasonal_features(st.session_state.model.data)
+                st.session_state.model.data = st.session_state.model.add_storage_features(st.session_state.model.data)
+                
+                # Generate signals using the simple method for the Streamlit interface
+                # We'll create a simplified signal generation method
+                signals_df = generate_simple_signals(st.session_state.model.data, rsi_buy, rsi_sell)
+                
+                # Simple backtest
+                backtest_results = simple_backtest(st.session_state.model.data, signals_df, initial_capital)
+                
+                if backtest_results is not None:
+                    # Calculate performance metrics
+                    st.session_state.model.performance_metrics = calculate_performance_metrics(backtest_results, initial_capital)
+                    st.success("✅ Analysis completed!")
+                    
+                    # Store results in session state for display
+                    st.session_state.backtest_results = backtest_results
+                    st.session_state.signals_df = signals_df
+                else:
+                    st.error("❌ Failed to run backtest")
         
-        # Generate signals
-        st.session_state.model.generate_signals(rsi_buy, rsi_sell)
+        except Exception as e:
+            st.error(f"❌ Error in analysis: {str(e)}")
+            import traceback
+            st.error(f"Details: {traceback.format_exc()}")
+
+# Add these helper functions right after your imports (around line 20):
+
+def generate_simple_signals(data, rsi_buy=30, rsi_sell=70):
+    """Generate simple trading signals for Streamlit interface"""
+    df = data.copy()
+    df['signal'] = 0
+    
+    # Ensure we have the required columns
+    if 'rsi' not in df.columns or 'bb_low' not in df.columns or 'bb_high' not in df.columns:
+        st.error("❌ Missing technical indicators. Please ensure data is loaded properly.")
+        return pd.DataFrame()
+    
+    # Buy signals
+    buy_condition = (
+        (df['rsi'] < rsi_buy) & 
+        (df['price'] < df['bb_low'])
+    )
+    df.loc[buy_condition, 'signal'] = 1
+    
+    # Sell signals
+    sell_condition = (
+        (df['rsi'] > rsi_sell) & 
+        (df['price'] > df['bb_high'])
+    )
+    df.loc[sell_condition, 'signal'] = -1
+    
+    return df[['signal']]
+
+def simple_backtest(data, signals_df, initial_capital=100000):
+    """Simple backtesting for Streamlit interface"""
+    try:
+        df = data.join(signals_df, how='inner').copy()
+        df = df.dropna(subset=['price', 'signal', 'returns'])
         
-        # Backtest
-        backtest_results = st.session_state.model.backtest_strategy(initial_capital)
+        if len(df) == 0:
+            st.error("❌ No valid data for backtesting")
+            return None
+        
+        df['position'] = df['signal'].shift(1).fillna(0)
+        df['strategy_returns'] = df['position'] * df['returns']
+        df['cumulative_strategy'] = (1 + df['strategy_returns']).cumprod() * initial_capital
+        df['cumulative_market'] = (1 + df['returns']).cumprod() * initial_capital
+        
+        return df
+        
+    except Exception as e:
+        st.error(f"❌ Error in backtesting: {str(e)}")
+        return None
+
+def calculate_performance_metrics(df, initial_capital):
+    """Calculate performance metrics for Streamlit interface"""
+    try:
+        strategy_returns = df['strategy_returns'].dropna()
+        market_returns = df['returns'].dropna()
+        
+        total_return = (df['cumulative_strategy'].iloc[-1] / initial_capital) - 1
+        market_return = (df['cumulative_market'].iloc[-1] / initial_capital) - 1
+        
+        volatility = strategy_returns.std() * np.sqrt(252)
+        sharpe_ratio = (strategy_returns.mean() * 252) / volatility if volatility > 0 else 0
+        
+        max_dd = (df['cumulative_strategy'] / df['cumulative_strategy'].cummax() - 1).min()
+        
+        return {
+            'Total Return': total_return,
+            'Market Return': market_return,
+            'Sharpe Ratio': sharpe_ratio,
+            'Max Drawdown': max_dd,
+            'Volatility': volatility
+        }
+    except Exception as e:
+        st.error(f"❌ Error calculating metrics: {str(e)}")
+        return {
+            'Total Return': 0,
+            'Market Return': 0,
+            'Sharpe Ratio': 0,
+            'Max Drawdown': 0,
+            'Volatility': 0
+        }
+
+# Also, update the display section to use session state data:
+# Replace the section that displays results (around line 1430+) with:
+
+# Display results if they exist
+if 'backtest_results' in st.session_state and st.session_state.backtest_results is not None:
+    backtest_results = st.session_state.backtest_results
+    
+    # Performance metrics
+    st.header("🎯 Performance Metrics")
+    
+    col1, col2, col3, col4, col5 = st.columns(5)
+    metrics = st.session_state.model.performance_metrics
+    
+    with col1:
+        color = "success" if metrics['Total Return'] > 0 else "danger"
+        st.markdown(f'<div class="metric-card {color}-metric">', unsafe_allow_html=True)
+        st.metric("Strategy Return", f"{metrics['Total Return']:.2%}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f'<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("Market Return", f"{metrics['Market Return']:.2%}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col3:
+        color = "success" if metrics['Sharpe Ratio'] > 1 else "warning" if metrics['Sharpe Ratio'] > 0 else "danger"
+        st.markdown(f'<div class="metric-card {color}-metric">', unsafe_allow_html=True)
+        st.metric("Sharpe Ratio", f"{metrics['Sharpe Ratio']:.2f}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col4:
+        color = "success" if metrics['Max Drawdown'] > -0.1 else "warning" if metrics['Max Drawdown'] > -0.2 else "danger"
+        st.markdown(f'<div class="metric-card {color}-metric">', unsafe_allow_html=True)
+        st.metric("Max Drawdown", f"{metrics['Max Drawdown']:.2%}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col5:
+        st.markdown(f'<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("Volatility", f"{metrics['Volatility']:.2%}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Continue with the rest of your chart display code...
         
         if backtest_results is not None:
             st.success("✅ Analysis completed!")
