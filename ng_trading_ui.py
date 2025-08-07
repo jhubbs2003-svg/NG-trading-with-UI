@@ -17,8 +17,8 @@ import base64
 
 # Import your enhanced model (assuming it's in the same directory)
 # from enhanced_ng_model import EnhancedNaturalGasModel, StrategyOptimizer
-import enhanced_ng_model
-from enhance_ng_model import EnhancedNaturalGasModel, StrategyOptimizer
+import "enhanced_ng_model.py"
+from "enhance_ng_model.py" import EnhancedNaturalGasModel, StrategyOptimizer
 # For demo purposes, I'll include a simplified version of the model
 # In practice, you'd import from your enhanced_ng_model.py file
 
