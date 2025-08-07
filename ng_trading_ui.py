@@ -21,7 +21,87 @@ import enhanced_ng_model
 from enhanced_ng_model import EnhancedNaturalGasModel, StrategyOptimizer
 # For demo purposes, I'll include a simplified version of the model
 # In practice, you'd import from your enhanced_ng_model.py file
+# Helper functions for Streamlit interface
+def generate_simple_signals(data, rsi_buy=30, rsi_sell=70):
+    """Generate simple trading signals for Streamlit interface"""
+    df = data.copy()
+    df['signal'] = 0
+    
+    # Ensure we have the required columns
+    if 'rsi' not in df.columns:
+        st.error("❌ RSI not calculated. Please ensure technical indicators are added.")
+        return pd.DataFrame({'signal': [0] * len(df)}, index=df.index)
+    
+    if 'bb_low' not in df.columns or 'bb_high' not in df.columns:
+        st.error("❌ Bollinger Bands not calculated. Please ensure technical indicators are added.")
+        return pd.DataFrame({'signal': [0] * len(df)}, index=df.index)
+    
+    # Buy signals
+    buy_condition = (
+        (df['rsi'] < rsi_buy) & 
+        (df['price'] < df['bb_low'])
+    )
+    df.loc[buy_condition, 'signal'] = 1
+    
+    # Sell signals
+    sell_condition = (
+        (df['rsi'] > rsi_sell) & 
+        (df['price'] > df['bb_high'])
+    )
+    df.loc[sell_condition, 'signal'] = -1
+    
+    return df[['signal']]
 
+def simple_backtest(data, signals_df, initial_capital=100000):
+    """Simple backtesting for Streamlit interface"""
+    try:
+        df = data.join(signals_df, how='inner').copy()
+        df = df.dropna(subset=['price', 'signal', 'returns'])
+        
+        if len(df) == 0:
+            st.error("❌ No valid data for backtesting")
+            return None
+        
+        df['position'] = df['signal'].shift(1).fillna(0)
+        df['strategy_returns'] = df['position'] * df['returns']
+        df['cumulative_strategy'] = (1 + df['strategy_returns']).cumprod() * initial_capital
+        df['cumulative_market'] = (1 + df['returns']).cumprod() * initial_capital
+        
+        return df
+        
+    except Exception as e:
+        st.error(f"❌ Error in backtesting: {str(e)}")
+        return None
+
+def calculate_performance_metrics(df, initial_capital):
+    """Calculate performance metrics for Streamlit interface"""
+    try:
+        strategy_returns = df['strategy_returns'].dropna()
+        
+        total_return = (df['cumulative_strategy'].iloc[-1] / initial_capital) - 1
+        market_return = (df['cumulative_market'].iloc[-1] / initial_capital) - 1
+        
+        volatility = strategy_returns.std() * np.sqrt(252) if len(strategy_returns) > 0 else 0
+        sharpe_ratio = (strategy_returns.mean() * 252) / volatility if volatility > 0 else 0
+        
+        max_dd = (df['cumulative_strategy'] / df['cumulative_strategy'].cummax() - 1).min()
+        
+        return {
+            'Total Return': total_return,
+            'Market Return': market_return,
+            'Sharpe Ratio': sharpe_ratio,
+            'Max Drawdown': max_dd,
+            'Volatility': volatility
+        }
+    except Exception as e:
+        st.error(f"❌ Error calculating metrics: {str(e)}")
+        return {
+            'Total Return': 0,
+            'Market Return': 0,
+            'Sharpe Ratio': 0,
+            'Max Drawdown': 0,
+            'Volatility': 0
+        }
 #!/usr/bin/env python
 # coding: utf-8
 
