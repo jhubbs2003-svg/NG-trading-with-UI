@@ -136,27 +136,33 @@ with st.sidebar:
         st.session_state.model.api_key = api_key if api_key else None
         # ng_trading_ui.py (in the sidebar section)
 
-    st.sidebar.header("🧠 Model Configuration")
+  # ng_trading_ui.py (in the `if run_analysis_btn:` block)
 
-    
+if strategy_type == "Machine Learning Prediction":
+    with st.spinner("Executing full ML analysis... This may take a moment."):
+        # 1. Prepare all features (this is the intensive part)
+        st.session_state.model.prepare_features()
+        
+        # 2. Select the best features for the chosen target
+        st.session_state.model.select_features(target=prediction_target)
+        
+        # 3. Train the model
+        model_map = {'Random Forest': 'rf', 'Gradient Boosting': 'gb'}
+        st.session_state.model.train_model(target=prediction_target, model_type=model_map[model_type])
+        
+        # 4. Generate signals (this now includes 'ml_signal')
+        signals_df = st.session_state.model.generate_signals()
+        
+        # 5. Backtest using the ML signal
+        backtest_results, metrics = st.session_state.model.backtest_strategy(
+            signals_df, signal_col='ml_signal' # Use the ML signal for the backtest
+        )
+        
+        st.session_state.backtest_results = backtest_results
+        st.session_state.model.performance_metrics = metrics
+        st.success("✅ Machine Learning analysis complete!")
 
-    if strategy_type == "Machine Learning Prediction":
-        model_type = st.sidebar.selectbox(
-            "Model Type",
-            ['Random Forest', 'Gradient Boosting'],
-            help="Choose the algorithm for the predictive model."
-        )
-        prediction_target = st.sidebar.selectbox(
-            "Prediction Target",
-            ['direction_1d', 'direction_5d', 'direction_20d'],
-            help="What should the model predict? (Price direction in X days)"
-        )
-        ml_confidence = st.sidebar.slider(
-            "ML Signal Confidence", 0.55, 0.80, 0.60, 0.05,
-            help="The probability threshold required to generate a buy/sell signal."
-        )
-
-    else:
+else:
             with st.spinner("Running simple technical analysis..."):
                 try:
                     # For simple mode, we still need to prepare basic data
