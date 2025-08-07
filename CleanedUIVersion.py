@@ -138,9 +138,6 @@ with st.sidebar:
 
     st.sidebar.header("🧠 Model Configuration")
 
-    strategy_type = st.sidebar.selectbox(
-        "Strategy Type",
-        ["Simple Technicals", "Machine Learning Prediction"]
     )
 
     if strategy_type == "Machine Learning Prediction":
